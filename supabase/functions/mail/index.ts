@@ -6,6 +6,7 @@ import {
 } from "../_shared/common.ts";
 
 const MAX_LIST = 80;
+const RESOLVED = "$Risolta";
 
 function imap() {
   return new ImapFlow({
@@ -17,7 +18,10 @@ function imap() {
       pass: Deno.env.get("IMAP_PASS") ?? Deno.env.get("SMTP_PASS") ?? "",
     },
     logger: false,
-    socketTimeout: 30_000,
+    socketTimeout: 20_000,
+    connectionTimeout: 15_000,
+    greetingTimeout: 10_000,
+    disableAutoIdle: true,
   });
 }
 
@@ -29,7 +33,9 @@ async function withInbox<T>(fn: (c: ImapFlow) => Promise<T>, readOnly = false): 
     return await fn(client);
   } finally {
     lock.release();
-    await client.logout().catch(() => {});
+    // chiusura rapida: non aspettiamo il server oltre 1,5 s
+    await Promise.race([client.logout().catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
+    try { client.close(); } catch { /* già chiusa */ }
   }
 }
 
@@ -152,6 +158,7 @@ Deno.serve(async (req) => {
               date: new Date(m.internalDate ?? m.envelope?.date ?? Date.now()).toISOString(),
               seen: m.flags?.has("\\Seen") ?? false,
               answered: m.flags?.has("\\Answered") ?? false,
+              resolved: m.flags?.has(RESOLVED) ?? false,
             });
           }
         }
@@ -179,6 +186,23 @@ Deno.serve(async (req) => {
           html: msg.html ? safeHtml(msg.html) : null, attachments: msg.attachments,
         },
       });
+    }
+
+    // ---- Risolta senza risposta (spam, già gestita altrove…) ----
+    if (action === "resolve") {
+      const uid = Number(b.uid);
+      if (!uid) return json(req, { ok: false, error: "invalid" }, 400);
+      const on = b.on !== false;
+      const flag = await withInbox(async (c) => {
+        const mb = c.mailbox && typeof c.mailbox === "object" ? c.mailbox : null;
+        const pf = mb?.permanentFlags as Set<string> | undefined;
+        // Se la casella non accetta etichette personalizzate usiamo il flag "risposto".
+        const f = !pf || pf.has("\\*") || pf.has(RESOLVED) ? RESOLVED : "\\Answered";
+        if (on) await c.messageFlagsAdd(String(uid), [f, "\\Seen"], { uid: true });
+        else await c.messageFlagsRemove(String(uid), [f], { uid: true });
+        return f;
+      });
+      return json(req, { ok: true, flag });
     }
 
     if (action === "unread") {

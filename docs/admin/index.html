@@ -53,6 +53,7 @@
           <div class="a-seg" role="group" aria-label="Filtra i messaggi">
             <button type="button" class="a-segbtn" data-mf="nuove" aria-pressed="true">Nuove <span id="cnt-nuove"></span></button>
             <button type="button" class="a-segbtn" data-mf="risposte" aria-pressed="false">Risposte <span id="cnt-risp"></span></button>
+            <button type="button" class="a-segbtn" data-mf="risolte" aria-pressed="false">Risolte</button>
             <button type="button" class="a-segbtn" data-mf="tutte" aria-pressed="false">Tutte</button>
           </div>
           <button id="m-refresh" class="a-btn a-btn-ghost a-btn-sm">Aggiorna</button>
@@ -74,7 +75,10 @@
                 <p class="a-mmeta"><strong id="mv-from"></strong> <span id="mv-addr"></span></p>
                 <p class="a-mmeta"><span id="mv-date"></span> · a <span id="mv-to"></span></p>
               </div>
-              <button type="button" id="mv-unread" class="a-btn a-btn-ghost a-btn-sm">Segna come non letta</button>
+              <div class="a-mbtns">
+                <button type="button" id="mv-resolve" class="a-btn a-btn-ghost a-btn-sm">Segna come risolta</button>
+                <button type="button" id="mv-unread" class="a-btn a-btn-ghost a-btn-sm">Segna come non letta</button>
+              </div>
             </div>
             <p id="mv-att" class="a-note" hidden></p>
             <iframe id="mv-body" class="a-mbody" title="Contenuto del messaggio" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>

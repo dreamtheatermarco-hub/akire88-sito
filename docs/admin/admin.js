@@ -213,7 +213,23 @@
 
   /* ---------- Posta ---------- */
   var mails = [], mfilter = 'nuove', cur = null;
-  function mapi(p) { return api(p, 'mail'); }
+  // Le richieste alla casella partono una alla volta (Register limita le connessioni contemporanee)
+  // e, se il server non risponde, si riprovano da sole fino a 2 volte. L'invio di una risposta non viene mai ripetuto.
+  var mqueue = Promise.resolve();
+  var SAFE = { list: 1, read: 1, preview: 1, unread: 1, resolve: 1 };
+  function mapi(p) {
+    var tries = SAFE[p.action] ? 3 : 1;
+    function attempt(n) {
+      return api(Object.assign({}, p), 'mail').catch(function (e) {
+        var network = /non ha risposto/.test(e.message);
+        if (network && n < tries) return new Promise(function (r) { setTimeout(r, 900 * n); }).then(function () { return attempt(n + 1); });
+        throw e;
+      });
+    }
+    var job = mqueue.then(function () { return attempt(1); });
+    mqueue = job.catch(function () {});
+    return job;
+  }
   function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function shortDate(d) {
     var x = new Date(d), now = new Date();
@@ -231,13 +247,16 @@
   }
 
   function renderMail() {
-    var nNew = mails.filter(function (m) { return !m.answered; }).length;
+    var nNew = mails.filter(function (m) { return !m.answered && !m.resolved; }).length;
     var nUnread = mails.filter(function (m) { return !m.seen; }).length;
     $('cnt-nuove').textContent = nNew ? '(' + nNew + ')' : '';
     $('cnt-risp').textContent = '';
     var badge = $('badge-new'); badge.textContent = nUnread; show(badge, nUnread > 0);
     var list = mails.filter(function (m) {
-      return mfilter === 'tutte' || (mfilter === 'nuove' ? !m.answered : m.answered);
+      if (mfilter === 'tutte') return true;
+      if (mfilter === 'nuove') return !m.answered && !m.resolved;
+      if (mfilter === 'risolte') return m.resolved;
+      return m.answered && !m.resolved;
     });
     var ul = $('mlist'); ul.textContent = '';
     list.forEach(function (m) {
@@ -245,7 +264,7 @@
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'a-mitem' + (m.seen ? '' : ' unread');
       if (cur && cur.uid === m.uid) b.setAttribute('aria-current', 'true');
-      b.innerHTML = '<span class="a-dot" aria-hidden="true"></span><span class="a-mfrom"></span><span class="a-mdate"></span><span class="a-msubj"></span>' + (m.answered ? '<span class="a-mtag">Risposta inviata</span>' : '');
+      b.innerHTML = '<span class="a-dot" aria-hidden="true"></span><span class="a-mfrom"></span><span class="a-mdate"></span><span class="a-msubj"></span>' + (m.resolved ? '<span class="a-mtag res">Risolta</span>' : m.answered ? '<span class="a-mtag">Risposta inviata</span>' : '');
       b.querySelector('.a-mfrom').textContent = m.fromName || m.fromAddr;
       b.querySelector('.a-mdate').textContent = shortDate(m.date);
       b.querySelector('.a-msubj').textContent = m.subject;
@@ -284,10 +303,31 @@
       ['rp-title', 'rp-body', 'rp-btext', 'rp-burl'].forEach(function (id) { $(id).value = ''; });
       msg($('rp-err'), ''); msg($('rp-ok'), ''); show($('rp-preview'), false); $('rp-prev').textContent = 'Mostra anteprima';
       mails.forEach(function (m) { if (m.uid === uid) m.seen = true; });
-      renderMail();
+      renderMail(); syncResolveBtn();
       if (window.innerWidth < 900) $('mview').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }).catch(function (x) { show($('mv'), false); show($('mv-placeholder'), true); msg($('m-err'), x.message); });
   }
+
+  function syncResolveBtn() {
+    var m = cur && mails.filter(function (x) { return x.uid === cur.uid; })[0];
+    var on = !!(m && m.resolved);
+    $('mv-resolve').textContent = on ? 'Riapri' : 'Segna come risolta';
+    $('mv-resolve').setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  $('mv-resolve').addEventListener('click', function () {
+    if (!cur) return;
+    var uid = cur.uid, b = this;
+    var m = mails.filter(function (x) { return x.uid === uid; })[0];
+    var on = !(m && m.resolved);
+    b.disabled = true;
+    mapi({ action: 'resolve', uid: uid, on: on }).then(function () {
+      mails.forEach(function (x) { if (x.uid === uid) { x.resolved = on; if (on) x.seen = true; } });
+      renderMail(); syncResolveBtn();
+      msg($('rp-ok'), on ? 'Messaggio segnato come risolto: lo trovi in "Risolte".' : 'Messaggio riaperto: è di nuovo tra le "Nuove".');
+      msg($('rp-err'), '');
+    }).catch(function (x) { msg($('m-err'), x.message); })
+      .then(function () { b.disabled = false; });
+  });
 
   $('mv-unread').addEventListener('click', function () {
     if (!cur) return;

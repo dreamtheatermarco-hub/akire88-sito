@@ -118,4 +118,17 @@ select.k-field{appearance:none;padding-right:36px;background-image:linear-gradie
   .a-mail{grid-template-columns:1fr}
   .a-mlist{position:static;max-height:none}
 }
-#mv-unread{align-self:flex-start;white-space:nowrap}
+
+.a-mbtns{display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start}
+.a-mbtns .a-btn{white-space:nowrap}
+.a-mtag.res{color:#B5D3DC;border-color:#3E6A7E}
+#mv-resolve[aria-pressed="true"]{border-color:#2DD4BF;color:#A7F3D0}
+.a-actions{flex-wrap:wrap}
+@media (max-width: 600px){
+  .a-head .a-actions{width:100%}
+  .a-seg{flex-wrap:wrap;border-radius:18px}
+  .a-segbtn{padding:0 10px}
+  .a-mview{padding:18px}
+}
+.a-tablewrap{max-width:100%;min-width:0}.a-panel,.a-main{min-width:0}
+.a-tablewrap{position:relative}

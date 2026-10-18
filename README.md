@@ -98,7 +98,8 @@ Legge la casella assistenza@akire88.it via IMAP e permette di rispondere con la 
 1. **Edge Functions** → nuova funzione `mail` con il codice di `supabase/dashboard/mail.ts`.
 2. Segreti (facoltativi, hanno già un valore predefinito): `IMAP_HOST` (predefinito `pop.securemail.pro`), `IMAP_PORT` (993). Utente e password sono quelli SMTP; se diversi, `IMAP_USER` e `IMAP_PASS`.
 
-- **Nuove**: messaggi senza risposta (il pallino indica i non letti) · **Risposte**: già risposti · **Tutte**: gli ultimi 80.
+- **Nuove**: senza risposta e non risolti (il pallino indica i non letti) · **Risposte**: già risposti · **Risolte**: chiuse senza rispondere (spam, già gestite) con "Segna come risolta", riapribili · **Tutte**: gli ultimi 80.
+- "Risolta" è un'etichetta IMAP (`$Risolta`): il messaggio resta nella casella.
 - Aprire un messaggio lo segna come letto; "Segna come non letta" lo riporta indietro.
 - La risposta parte da assistenza@akire88.it con titolo facoltativo, testo, pulsante con link, firma e messaggio originale citato. Il messaggio viene segnato come "risposto" (visibile anche in Outlook, Apple Mail ecc.) e una copia va nella cartella Inviata.
 - Gli allegati ricevuti sono elencati ma si aprono dal programma di posta.
