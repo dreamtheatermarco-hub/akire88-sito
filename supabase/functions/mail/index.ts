@@ -1,7 +1,6 @@
 // Edge Function "mail": legge la casella assistenza@akire88.it via IMAP e invia risposte con la grafica Akire88.
 // Usa lo stesso accesso del pannello admin (token ottenuto con il login).
 import { ImapFlow } from "npm:imapflow@1.7.8";
-import PostalMime from "npm:postal-mime@2.7.6";
 import {
   clean, corsHeaders, isEmail, isHttpUrl, json, replyEmail, type ReplyInput, sendMail, validToken,
 } from "../_shared/common.ts";
@@ -55,26 +54,64 @@ type Original = {
   to: string; attachments: { filename: string; size: number }[];
 };
 
+// deno-lint-ignore no-explicit-any
+type Node = any;
+
+// Percorre la struttura MIME: trova la parte testo, la parte HTML e gli allegati, senza scaricarli.
+function walk(n: Node, out: { text?: Node; html?: Node; att: Node[] }) {
+  if (!n) return;
+  if (n.childNodes?.length) { for (const ch of n.childNodes) walk(ch, out); return; }
+  const type = String(n.type ?? "").toLowerCase();
+  const name = n.dispositionParameters?.filename ?? n.parameters?.name;
+  const isAtt = n.disposition === "attachment" || (!!name && !type.startsWith("text/"));
+  if (isAtt) { out.att.push(n); return; }
+  if (type === "text/plain" && !out.text) out.text = n;
+  else if (type === "text/html" && !out.html) out.html = n;
+}
+
+const MAX_PART = 400_000; // caratteri: oltre, il testo viene troncato
+
+async function downloadPart(c: ImapFlow, uid: number, n: Node): Promise<string> {
+  const part = n.part ?? "1";
+  const { content } = await c.download(String(uid), part, { uid: true, maxBytes: MAX_PART });
+  const dec = new TextDecoder();
+  let out = "";
+  for await (const chunk of content as AsyncIterable<Uint8Array | string>) {
+    out += typeof chunk === "string" ? chunk : dec.decode(chunk, { stream: true });
+    if (out.length > MAX_PART) break;
+  }
+  return out;
+}
+
 async function loadOriginal(c: ImapFlow, uid: number): Promise<Original | null> {
-  const msg = await c.fetchOne(String(uid), { source: true, uid: true }, { uid: true });
-  if (!msg || !msg.source) return null;
-  const p = await PostalMime.parse(msg.source);
-  const text = p.text ?? (p.html ? p.html.replace(/<(style|script)[\s\S]*?<\/\1>/gi, "").replace(/<[^>]+>/g, " ").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n") : "");
+  const msg = await c.fetchOne(String(uid), { envelope: true, bodyStructure: true, headers: ["references"], uid: true }, { uid: true });
+  if (!msg || !msg.envelope) return null;
+  const env = msg.envelope;
+  const parts: { text?: Node; html?: Node; att: Node[] } = { att: [] };
+  walk(msg.bodyStructure, parts);
+  const html = parts.html ? await downloadPart(c, uid, parts.html) : undefined;
+  let text = parts.text ? await downloadPart(c, uid, parts.text) : "";
+  if (!text && html) {
+    text = html.replace(/<(style|script|head)[\s\S]*?<\/\1>/gi, "").replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n\n")
+      .replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/[ \t]+/g, " ").replace(/\n\s*\n\s*\n+/g, "\n\n");
+  }
+  const refs = msg.headers ? new TextDecoder().decode(msg.headers).replace(/^references:\s*/i, "").replace(/\s+/g, " ").trim() : "";
+  const from = env.from?.[0];
   return {
     uid,
-    subject: p.subject ?? "(senza oggetto)",
-    fromName: p.from?.name ?? "",
-    fromAddr: p.from?.address ?? "",
-    replyTo: p.replyTo?.[0]?.address ?? p.from?.address ?? "",
-    messageId: p.messageId,
-    references: (p.headers.find((h) => h.key === "references")?.value) ?? undefined,
-    date: fmtDate(p.date),
+    subject: env.subject ?? "(senza oggetto)",
+    fromName: from?.name ?? "",
+    fromAddr: from?.address ?? "",
+    replyTo: env.replyTo?.[0]?.address ?? from?.address ?? "",
+    messageId: env.messageId,
+    references: refs || undefined,
+    date: fmtDate(env.date),
     text: text.trim(),
-    html: p.html,
-    to: (p.to ?? []).map((t) => t.address).filter(Boolean).join(", "),
-    attachments: (p.attachments ?? []).map((a) => ({
-      filename: a.filename ?? "allegato",
-      size: typeof a.content === "string" ? a.content.length : (a.content as ArrayBuffer).byteLength,
+    html,
+    to: (env.to ?? []).map((t: { address?: string }) => t.address).filter(Boolean).join(", "),
+    attachments: parts.att.map((n: Node) => ({
+      filename: n.dispositionParameters?.filename ?? n.parameters?.name ?? "allegato",
+      size: Number(n.size ?? 0),
     })),
   };
 }

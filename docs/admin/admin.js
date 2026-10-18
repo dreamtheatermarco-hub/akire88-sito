@@ -22,6 +22,8 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': CFG.supabaseAnonKey, 'Authorization': 'Bearer ' + CFG.supabaseAnonKey },
       body: JSON.stringify(payload)
+    }).catch(function () {
+      throw new Error('Il server non ha risposto. Riprova tra poco; se succede ancora, apri su Supabase Edge Functions → ' + (fn || 'admin') + ' → Logs.');
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (d) {
         if (d.error === 'session') { logout(); throw new Error('Sessione scaduta: accedi di nuovo.'); }
