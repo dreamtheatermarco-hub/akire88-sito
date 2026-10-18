@@ -6,6 +6,6 @@
  * NON inserire mai qui la chiave "service_role".
  */
 window.AKIRE88 = {
-  supabaseUrl: '',      // es. 'https://abcdefgh.supabase.co'
-  supabaseAnonKey: ''   // es. 'eyJhbGciOi...'
+  supabaseUrl: 'https://osxevwvsyrqifvkjtlfu.supabase.co',
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zeGV2d3ZzeXJxaWZ2a2p0bGZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMTk5NzQsImV4cCI6MjEwNzg5NTk3NH0.IF1JcPJEDUwSoyc44KimkKKuodt4fXpdnYBR0H37e5o'
 };
