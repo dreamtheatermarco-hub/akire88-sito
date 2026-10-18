@@ -216,7 +216,7 @@
   // Le richieste alla casella partono una alla volta (Register limita le connessioni contemporanee)
   // e, se il server non risponde, si riprovano da sole fino a 2 volte. L'invio di una risposta non viene mai ripetuto.
   var mqueue = Promise.resolve();
-  var SAFE = { list: 1, read: 1, preview: 1, unread: 1, resolve: 1 };
+  var SAFE = { list: 1, read: 1, preview: 1, unread: 1, resolve: 1, replies: 1 };
   function mapi(p) {
     var tries = SAFE[p.action] ? 3 : 1;
     function attempt(n) {
@@ -303,7 +303,7 @@
       ['rp-title', 'rp-body', 'rp-btext', 'rp-burl'].forEach(function (id) { $(id).value = ''; });
       msg($('rp-err'), ''); msg($('rp-ok'), ''); show($('rp-preview'), false); $('rp-prev').textContent = 'Mostra anteprima';
       mails.forEach(function (m) { if (m.uid === uid) m.seen = true; });
-      renderMail(); syncResolveBtn();
+      renderMail(); syncResolveBtn(); setupReplies();
       if (window.innerWidth < 900) $('mview').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }).catch(function (x) { show($('mv'), false); show($('mv-placeholder'), true); msg($('m-err'), x.message); });
   }
@@ -327,6 +327,43 @@
       msg($('rp-err'), '');
     }).catch(function (x) { msg($('m-err'), x.message); })
       .then(function () { b.disabled = false; });
+  });
+
+  /* Risposta già inviata: sezione a scomparsa, caricata solo all'apertura */
+  var repliesFor = null;
+  function setupReplies() {
+    var m = cur && mails.filter(function (x) { return x.uid === cur.uid; })[0];
+    var d = $('mv-replies');
+    d.open = false; repliesFor = null;
+    $('mv-replies-body').textContent = '';
+    $('mv-replies-hint').textContent = 'mostra';
+    show(d, !!(m && m.answered));
+  }
+  $('mv-replies').addEventListener('toggle', function () {
+    $('mv-replies-hint').textContent = this.open ? 'nascondi' : 'mostra';
+    if (!this.open || !cur || repliesFor === cur.uid) return;
+    var uid = cur.uid, box = $('mv-replies-body');
+    repliesFor = uid;
+    box.innerHTML = '<p class="a-note">Cerco la risposta nella cartella Inviata…</p>';
+    mapi({ action: 'replies', uid: uid }).then(function (d) {
+      if (!cur || cur.uid !== uid) return;
+      box.textContent = '';
+      var list = d.replies || [];
+      if (!list.length) {
+        var p = document.createElement('p'); p.className = 'a-note';
+        p.textContent = d.note || 'Nessuna risposta trovata nella cartella Inviata (forse è stata inviata da un altro indirizzo o la copia non è stata salvata).';
+        box.appendChild(p); return;
+      }
+      list.slice().reverse().forEach(function (r) {
+        var meta = document.createElement('p'); meta.className = 'a-mmeta';
+        meta.textContent = 'Inviata il ' + r.date + (r.to ? ' a ' + r.to : '');
+        var f = document.createElement('iframe'); f.className = 'a-mbody';
+        f.setAttribute('sandbox', 'allow-popups allow-popups-to-escape-sandbox');
+        f.title = 'Risposta inviata il ' + r.date;
+        f.srcdoc = r.html || ('<!doctype html><meta charset="utf-8"><body style="margin:16px;font:15px/1.55 Helvetica,Arial,sans-serif;color:#E6FFFA;background:#081C28;white-space:pre-wrap">' + esc(r.text || '') + '</body>');
+        box.appendChild(meta); box.appendChild(f);
+      });
+    }).catch(function (x) { repliesFor = null; box.innerHTML = ''; var p = document.createElement('p'); p.className = 'k-err'; p.textContent = x.message; box.appendChild(p); });
   });
 
   $('mv-unread').addEventListener('click', function () {
@@ -366,7 +403,7 @@
       ['rp-title', 'rp-body', 'rp-btext', 'rp-burl'].forEach(function (id) { $(id).value = ''; });
       show($('rp-preview'), false);
       mails.forEach(function (m) { if (m.uid === cur.uid) { m.answered = true; m.seen = true; } });
-      renderMail();
+      renderMail(); setupReplies();
     }).catch(function (x) { msg($('rp-err'), x.message); })
       .then(function () { b.disabled = false; b.textContent = 'Invia risposta'; });
   });

@@ -348,6 +348,61 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ---- Risposte già inviate a un messaggio (cercate nella cartella Inviata) ----
+    if (action === "replies") {
+      const uid = Number(b.uid);
+      if (!uid) return json(req, { ok: false, error: "invalid" }, 400);
+      const client = imap();
+      await client.connect();
+      try {
+        let messageId: string | undefined, subject = "";
+        let lock = await client.getMailboxLock("INBOX", { readOnly: true });
+        try {
+          const m = await client.fetchOne(String(uid), { envelope: true, uid: true }, { uid: true });
+          messageId = m && m.envelope ? m.envelope.messageId : undefined;
+          subject = (m && m.envelope?.subject) || "";
+        } finally { lock.release(); }
+
+        const boxes = await client.list();
+        const sent = boxes.find((x) => x.specialUse === "\\Sent") ??
+          boxes.find((x) => /^(inbox\.)?(sent|inviata|posta inviata|sent items|sent messages)$/i.test(x.path));
+        if (!sent) return json(req, { ok: true, replies: [], note: "Cartella Inviata non trovata nella casella." });
+
+        const replies: Record<string, unknown>[] = [];
+        lock = await client.getMailboxLock(sent.path, { readOnly: true });
+        try {
+          let found: number[] = [];
+          if (messageId) {
+            found = ((await client.search({ header: { "in-reply-to": messageId } }, { uid: true })) || []) as number[];
+            if (!found.length) found = ((await client.search({ header: { references: messageId } }, { uid: true })) || []) as number[];
+          }
+          if (!found.length && subject) {
+            const base = subject.replace(/^(re|r|fwd?|i):\s*/i, "");
+            found = ((await client.search({ subject: base }, { uid: true })) || []) as number[];
+          }
+          for (const u of found.sort((a, b) => a - b).slice(-3)) {
+            const m = await client.fetchOne(String(u), { envelope: true, bodyStructure: true, uid: true }, { uid: true });
+            if (!m || !m.envelope) continue;
+            const parts: { text?: Node; html?: Node; att: Node[] } = { att: [] };
+            walk(m.bodyStructure, parts);
+            const html = parts.html ? await downloadPart(client, u, parts.html) : undefined;
+            const text = !html && parts.text ? await downloadPart(client, u, parts.text) : "";
+            replies.push({
+              date: fmtDate(m.envelope.date),
+              to: (m.envelope.to ?? []).map((t: { address?: string }) => t.address).filter(Boolean).join(", "),
+              subject: m.envelope.subject ?? "",
+              html: html ? safeHtml(html) : null,
+              text: text.trim(),
+            });
+          }
+        } finally { lock.release(); }
+        return json(req, { ok: true, replies });
+      } finally {
+        await Promise.race([client.logout().catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
+        try { client.close(); } catch { /* già chiusa */ }
+      }
+    }
+
     // ---- Risolta senza risposta (spam, già gestita altrove…) ----
     if (action === "resolve") {
       const uid = Number(b.uid);
@@ -407,11 +462,17 @@ Deno.serve(async (req) => {
             boxes.find((x) => /^(inbox\.)?(sent|inviata|posta inviata|sent items|sent messages)$/i.test(x.path));
           if (sent) {
             const from = Deno.env.get("MAIL_FROM") ?? Deno.env.get("SMTP_USER") ?? "";
+            const b64 = (t: string) => {
+              const bytes = new TextEncoder().encode(t);
+              let bin = ""; for (const x of bytes) bin += String.fromCharCode(x);
+              return btoa(bin);
+            };
+            const body64 = (b64(mail.html).match(/.{1,76}/g) ?? []).join("\r\n");
             const raw = [
-              `From: "Akire88" <${from}>`, `To: ${to}`, `Subject: ${subject}`,
+              `From: "Akire88" <${from}>`, `To: ${to}`, `Subject: =?UTF-8?B?${b64(subject)}?=`,
               `Date: ${new Date().toUTCString()}`, "MIME-Version: 1.0",
-              ...(o.messageId ? [`In-Reply-To: ${o.messageId}`] : []),
-              "Content-Type: text/html; charset=utf-8", "", mail.html,
+              ...(o.messageId ? [`In-Reply-To: ${o.messageId}`, `References: ${[o.references, o.messageId].filter(Boolean).join(" ")}`] : []),
+              "Content-Type: text/html; charset=utf-8", "Content-Transfer-Encoding: base64", "", body64,
             ].join("\r\n");
             await c.append(sent.path, raw, ["\\Seen"]);
           }
