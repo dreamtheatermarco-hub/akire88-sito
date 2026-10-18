@@ -134,5 +134,26 @@ Deno.serve(async (req) => {
     console.error("mail", e);
   }
 
+  // Conferma automatica a chi ha scritto.
+  try {
+    const nome = row.nome.split(/\s+/)[0];
+    await sendMail({
+      to: row.email,
+      replyTo: NOTIFY_TO,
+      subject: "Abbiamo ricevuto la tua richiesta – Akire88",
+      text: `Ciao ${nome},\n\ngrazie per averci scritto! Abbiamo ricevuto la tua richiesta (${row.tipo}) e ti risponderemo al più presto.\n\nEcco cosa ci hai scritto:\n${row.messaggio}\n\nSe vuoi aggiungere qualcosa, rispondi pure a questa email.\n\nAkire88\n${NOTIFY_TO}`,
+      html: mailLayout(
+        `Grazie, ${esc(nome)}!`,
+        `<p style="margin:0 0 16px">Abbiamo ricevuto la tua richiesta <strong style="color:#E6FFFA">${esc(row.tipo)}</strong> e ti risponderemo al più presto.</p>
+<p style="margin:0 0 6px;color:#8FB7C4">Ecco cosa ci hai scritto</p>
+<p style="margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#081C28;white-space:pre-line;color:#E6FFFA">${esc(row.messaggio)}</p>
+<p style="margin:0">Se vuoi aggiungere qualcosa, rispondi pure a questa email.</p>
+<p style="margin:16px 0 0;color:#8FB7C4">Il team Akire88</p>`,
+      ),
+    });
+  } catch (e) {
+    console.error("ack", e);
+  }
+
   return json(req, { ok: true });
 });
