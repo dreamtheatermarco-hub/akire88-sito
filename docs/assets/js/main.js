@@ -142,6 +142,13 @@
     });
   }
 
+  /* Pulsante "Newsletter" in alto: scorre al box e mette il cursore nel campo email */
+  $all('.k-nl-link').forEach(function (a) {
+    a.addEventListener('click', function () {
+      setTimeout(function () { var f = $('#k-nl'); if (f && f.offsetParent) f.focus({ preventScroll: true }); }, 700);
+    });
+  });
+
   /* ---------------- IA nelle app: selettore livello ---------------- */
   $all('.k-mode').forEach(function (b) {
     b.addEventListener('click', function () {

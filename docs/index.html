@@ -29,7 +29,7 @@
 
 <a class="k-skip" href="#servizi">Vai ai contenuti</a>
 <header style="position: sticky; top: 0; z-index: 20; background: rgba(8,28,40,.72); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-bottom: 1px solid rgba(143,183,196,.14)">
-<nav aria-label="Principale" style="max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px">
+<nav class="k-nav" aria-label="Principale" style="max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px">
 <a href="#top" style="display: flex; align-items: center; gap: 10px; color: #E6FFFA; text-decoration: none">
 <svg width="30" height="30" viewBox="0 0 132 132" aria-hidden="true"><circle cx="40" cy="40" r="20" fill="none" stroke="#2DD4BF" stroke-width="12"></circle><circle cx="92" cy="40" r="20" fill="none" stroke="#A7F3D0" stroke-width="12"></circle><circle cx="40" cy="92" r="20" fill="none" stroke="#A7F3D0" stroke-width="12"></circle><circle cx="92" cy="92" r="20" fill="none" stroke="#2DD4BF" stroke-width="12"></circle><circle cx="66" cy="66" r="6" fill="#E6FFFA"></circle></svg>
 <span style="font-size: 19px; font-weight: 700">Akire<span style="color: #2DD4BF">88</span></span>
@@ -40,7 +40,8 @@
 <a href="#ia" style="color: #B5D3DC; text-decoration: none; padding: 12px 0">IA</a>
 <a href="#metodo" style="color: #B5D3DC; text-decoration: none; padding: 12px 0">Metodo</a>
 <a href="#progetti" style="color: #B5D3DC; text-decoration: none; padding: 12px 0">Le nostre app</a>
-<button type="button" class="k-btn" data-open="Informazioni generali" style="height: 40px; padding: 0 18px; border-radius: 20px; border: none; background: #E6FFFA; color: #081C28; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Contattaci</button>
+<a href="#newsletter" class="k-btn k-navbtn k-nl-link" style="height: 40px; padding: 0 18px; border-radius: 20px; border: 1px solid #2E5468; color: #E6FFFA; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center">Newsletter</a>
+<button type="button" class="k-btn k-navbtn" data-open="Informazioni generali" style="height: 40px; padding: 0 18px; border-radius: 20px; border: none; background: #E6FFFA; color: #081C28; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Contattaci</button>
 </div>
 </nav>
 </header>
@@ -463,7 +464,7 @@
 <h2 style="margin: 0; font-size: clamp(40px, 6.4vw, 88px); font-weight: 700; letter-spacing: -0.04em; line-height: 1">Hai un'idea per un'app?<br><span style="color: #2DD4BF">Diamole forma.</span></h2>
 <p style="margin: 0; font-size: clamp(17px, 2vw, 20px); line-height: 1.55; color: #B5D3DC">Raccontaci cosa vuoi costruire, da zero o per il tuo software esistente. Ti rispondiamo con una proposta su misura.</p>
 <button type="button" class="k-btn" data-open="Informazioni generali" style="height: 58px; padding: 0 34px; border-radius: 29px; border: none; background: #2DD4BF; color: #081C28; font-family: inherit; font-size: 17px; font-weight: 600; cursor: pointer">Scrivici ora</button>
-<div style="width: 100%; margin-top: 56px; padding: clamp(24px, 4vw, 40px); border-radius: 28px; background: rgba(14,42,59,.85); border: 1px solid #1C4256; display: flex; flex-direction: column; gap: 16px; text-align: left">
+<div id="newsletter" style="scroll-margin-top: 96px; width: 100%; margin-top: 56px; padding: clamp(24px, 4vw, 40px); border-radius: 28px; background: rgba(14,42,59,.85); border: 1px solid #1C4256; display: flex; flex-direction: column; gap: 16px; text-align: left">
 <div style="display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 22px">Newsletter Akire88</h3><p style="margin: 0; font-size: 15px; color: #B5D3DC">Novità su app, intelligenza artificiale e nuovi progetti Akire88. Poche email, solo quando hanno qualcosa da dire.</p></div>
 <div data-if="nlNotSent">
 <form id="k-nl-form" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end">

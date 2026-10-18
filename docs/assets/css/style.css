@@ -146,5 +146,40 @@ a{color:#5EEAD4}a:hover{color:#A7F3D0}
 }
 @media (prefers-reduced-motion: reduce){*{animation:none !important}}
 
-/* Menu compatto su telefono */
-@media (max-width: 720px){header nav > div > a{display:none !important}}
+
+/* ================= Telefono ================= */
+@media (max-width: 760px){
+  /* Barra in alto: logo + Newsletter + Contattaci su una riga */
+  header nav > div > a:not(.k-navbtn){display:none !important}
+  .k-nav{padding:10px 16px !important;flex-wrap:nowrap !important;gap:8px !important}
+  .k-nav > div{flex-wrap:nowrap !important;gap:8px !important}
+  .k-navbtn{height:38px !important;padding:0 13px !important;font-size:13px !important;white-space:nowrap}
+
+  /* Schede servizi: niente sovrapposizione, una dopo l'altra */
+  #servizi article{position:relative !important;top:auto !important;min-height:0 !important;padding:24px 20px !important;gap:28px !important}
+  #servizi article > div:first-child{flex-basis:100% !important}
+  #servizi .k-tilt{flex-basis:100% !important;max-width:100%}
+  #servizi .k-tilt *{max-width:100%}
+
+  /* Metodo: niente blocco sullo schermo, i passi si accendono entrando in vista */
+  #metodo{height:auto !important;padding:100px 16px 60px !important}
+  #metodo > div{position:static !important;min-height:0 !important;padding:0 !important}
+  #metodo > div > div[aria-hidden="true"]{display:none !important}
+  #metodo ol{padding-left:58px !important}
+  #metodo .k-vline{animation:none !important;transform:none !important}
+
+  /* Sezione IA: telefono un po' più piccolo */
+  #ia{padding:110px 16px !important}
+  #ia .k-zoom > div{transform:scale(.9);transform-origin:top center;margin-bottom:-50px}
+
+  section{scroll-margin-top:64px}
+}
+@media (max-width: 760px) and (prefers-reduced-motion: no-preference){
+  @supports (animation-timeline: view()){
+    #metodo .k-step{animation:k-stepon linear both !important;animation-timeline:view() !important;animation-range:entry 10% cover 35% !important}
+    #metodo .k-stepdot{animation:k-doton linear both !important;animation-timeline:view() !important;animation-range:entry 10% cover 35% !important}
+  }
+}
+@media (max-width: 360px){
+  .k-nav .k-nl-link{display:none !important}
+}
