@@ -1,15 +1,15 @@
 # akire88.it
 
-Sito one-page di Akire88: pagine statiche su **GitHub Pages**, modulo di contatto e newsletter su **Supabase** (database in UE + Edge Functions), dominio ed email su **Register.it**.
+Sito one-page di Akire88: pagine statiche su **GitHub Pages** (cartella `docs/`), modulo di contatto e newsletter su **Supabase** (database in UE + Edge Functions), dominio ed email su **Register.it**.
 
 ```
-site/                 ← il sito pubblicato (HTML, CSS, JS, font, immagini)
+docs/                 ← il sito pubblicato (HTML, CSS, JS, font, immagini)
   assets/js/config.js ← URL e chiave pubblica di Supabase (da compilare)
+  CNAME               ← dominio www.akire88.it per GitHub Pages
 supabase/
   migrations/         ← tabelle contact_requests e newsletter_subscribers
   functions/contact   ← salva la richiesta e avvisa assistenza@akire88.it
   functions/newsletter← iscrizione con doppia conferma, conferma, disiscrizione
-.github/workflows/    ← pubblica site/ su GitHub Pages a ogni push su main
 ```
 
 Nessuna libreria esterna, nessun cookie, font ospitati nel sito.
@@ -46,13 +46,13 @@ Nessuna libreria esterna, nessun cookie, font ospitati nel sito.
    - Il server SMTP lo trovi nel pannello Register, nella sezione della casella email (impostazioni del client di posta). Usa la porta **465 con SSL**: Supabase blocca le porte 25 e 587.
    - `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` sono già disponibili nelle funzioni, non vanno aggiunti.
 
-5. Apri `site/assets/js/config.js` e inserisci **Project URL** e chiave **anon public** (Project Settings → API). Mai la chiave `service_role`.
+5. Apri `docs/assets/js/config.js` e inserisci **Project URL** e chiave **anon public** (Project Settings → API). Mai la chiave `service_role`.
 
 ## 2. GitHub Pages
 
-1. Carica il contenuto di questa cartella nel repository e fai push su `main`.
-2. Repository → **Settings → Pages** → *Build and deployment* → Source: **GitHub Actions**.
-3. Nella stessa pagina, *Custom domain*: `www.akire88.it` → Save. Quando il DNS è attivo, spunta **Enforce HTTPS**.
+1. Repository → **Settings → Pages** → *Build and deployment* → Source: **Deploy from a branch**.
+2. Branch: **main**, cartella: **/docs** → Save.
+3. *Custom domain*: `www.akire88.it` (è già nel file `docs/CNAME`). Quando il DNS è attivo, spunta **Enforce HTTPS**.
 4. Consigliato: verifica il dominio dal tuo profilo GitHub (**Settings → Pages → Add a domain**). GitHub ti darà un record TXT da aggiungere su Register: impedisce ad altri di usare il tuo dominio.
 
 ## 3. DNS su Register
@@ -91,5 +91,5 @@ Prima elimina gli eventuali record A/CNAME di `@` e `www` che puntano alla pagin
 
 ## Modifiche future
 
-Modifica i file in `site/` e fai push su `main`: GitHub Actions pubblica in circa un minuto.
-Per provare in locale: `cd site && python3 -m http.server 8080` e apri http://localhost:8080 (i moduli funzionano solo dal dominio indicato in `ALLOWED_ORIGINS`; per i test aggiungi temporaneamente `http://localhost:8080`).
+Modifica i file in `docs/` e fai push su `main`: GitHub Pages pubblica in circa un minuto.
+Per provare in locale: `cd docs && python3 -m http.server 8080` e apri http://localhost:8080 (i moduli funzionano solo dal dominio indicato in `ALLOWED_ORIGINS`; per i test aggiungi temporaneamente `http://localhost:8080`).
