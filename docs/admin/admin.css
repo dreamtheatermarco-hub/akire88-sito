@@ -1,0 +1,82 @@
+/* Akire88 · pannello admin (stesso tema del sito) */
+.a-body{margin:0;min-height:100vh;background:#081C28;color:#E6FFFA;font-family:'Space Grotesk',system-ui,sans-serif;
+  background-image:linear-gradient(rgba(143,183,196,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(143,183,196,.06) 1px,transparent 1px);background-size:64px 64px}
+.a-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.a-brand{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:700}
+.a-brand b{color:#2DD4BF;font-weight:700}
+.a-brand em{font-style:normal;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8FB7C4;margin-left:8px;padding:4px 8px;border:1px solid #2E5468;border-radius:999px}
+.a-h1{margin:0;font-size:clamp(26px,3.4vw,36px);font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.a-card{background:#0E2A3B;border:1px solid #1C4256;border-radius:24px}
+.a-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.a-field label,.a-fieldset legend{font-size:13px;color:#8FB7C4}
+.a-grow{flex:1 1 240px}
+.a-hint{font-size:12px;color:#8FB7C4;line-height:1.5}
+.a-hint code{font-family:'JetBrains Mono',monospace;color:#A7F3D0}
+.a-note{font-size:13px;color:#8FB7C4}
+.a-row{display:flex;flex-wrap:wrap;gap:12px}
+.a-end{align-items:flex-end}
+.a-full{width:100%}
+textarea.k-field{height:auto;padding:14px 16px;resize:vertical;line-height:1.55}
+select.k-field{appearance:none;padding-right:36px;background-image:linear-gradient(45deg,transparent 50%,#8FB7C4 50%),linear-gradient(135deg,#8FB7C4 50%,transparent 50%);background-position:calc(100% - 18px) 21px,calc(100% - 13px) 21px;background-size:5px 5px;background-repeat:no-repeat}
+
+/* Pulsanti */
+.a-btn{min-height:46px;padding:0 20px;border-radius:23px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:background-color .2s,border-color .2s,color .2s}
+.a-btn-sm{min-height:40px;padding:0 16px;font-size:14px}
+.a-btn-primary{background:#2DD4BF;color:#081C28}
+.a-btn-primary:hover{background:#5EEAD4}
+.a-btn-ghost{background:transparent;color:#E6FFFA;border-color:#2E5468}
+.a-btn-ghost:hover{border-color:#2DD4BF}
+.a-btn-danger{background:transparent;color:#FFB4C0;border-color:#7F2A3B}
+.a-btn-danger:hover{background:#3A1620}
+.a-btn:focus-visible,.a-tab:focus-visible{outline:2px solid #A7F3D0;outline-offset:3px}
+
+/* Login */
+.a-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.a-login-card{width:min(420px,100%);padding:36px 32px;display:flex;flex-direction:column;gap:18px;animation:k-modal .4s cubic-bezier(.2,.7,.2,1) both}
+
+/* Barra in alto */
+.a-top{position:sticky;top:0;z-index:10;background:rgba(8,28,40,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(143,183,196,.14)}
+.a-top-in{max-width:1280px;margin:0 auto;padding:12px 24px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
+.a-tabs{display:flex;flex-wrap:wrap;gap:4px;padding:4px;border-radius:999px;background:#0E2A3B;border:1px solid #1C4256}
+.a-tab{min-height:40px;padding:0 18px;border-radius:20px;border:none;background:transparent;color:#B5D3DC;font-family:inherit;font-size:14px;cursor:pointer}
+.a-tab[aria-selected="true"]{background:#2DD4BF;color:#081C28;font-weight:600}
+
+.a-main{max-width:1280px;margin:0 auto;padding:40px 24px 80px}
+.a-panel{display:flex;flex-direction:column;gap:24px;animation:k-modal .35s cubic-bezier(.2,.7,.2,1) both}
+.a-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.a-actions{display:flex;gap:8px}
+
+/* Statistiche */
+.a-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.a-stat{padding:20px 22px;border-radius:20px;background:#0E2A3B;border:1px solid #1C4256;display:flex;flex-direction:column;gap:6px}
+.a-stat span{font-size:13px;color:#8FB7C4}
+.a-stat strong{font-size:40px;line-height:1;letter-spacing:-.03em}
+.a-stat:first-child strong{color:#2DD4BF}
+.a-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+
+/* Tabelle */
+.a-tablewrap{border-radius:20px;border:1px solid #1C4256;background:#0B2230;overflow-x:auto}
+.a-table{width:100%;min-width:640px;border-collapse:collapse;font-size:14px}
+.a-table th{text-align:left;font-weight:500;color:#8FB7C4;padding:14px 18px;background:#0E2A3B;border-bottom:1px solid #1C4256;white-space:nowrap}
+.a-table td{padding:12px 18px;border-top:1px solid #12354A;vertical-align:middle}
+.a-table tbody tr:hover{background:#0E2A3B}
+.a-table td:last-child{text-align:right;white-space:nowrap}
+.a-pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.a-pill.confermato{background:#2DD4BF;color:#081C28}
+.a-pill.in_attesa{border:1px solid #A7F3D0;color:#A7F3D0}
+.a-pill.disiscritto{border:1px solid #3E6A7E;color:#8FB7C4}
+.a-empty{margin:0;padding:28px;text-align:center;color:#8FB7C4}
+
+/* Composizione */
+.a-compose{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.a-form{flex:1 1 440px;min-width:0;padding:28px;display:flex;flex-direction:column;gap:18px}
+.a-fieldset{border:1px dashed #2E5468;border-radius:16px;margin:0;padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.a-fieldset legend{padding:0 6px}
+.a-sendbox{display:flex;flex-direction:column;gap:14px;padding-top:18px;border-top:1px solid #1C4256}
+.a-confirm{padding:18px;border-radius:16px;background:#12354A;border:1px solid #2DD4BF;display:flex;flex-direction:column;gap:14px;animation:k-modal .25s ease both}
+.a-confirm p{margin:0;line-height:1.5}
+.a-ok{margin:0;padding:12px 14px;border-radius:12px;background:#12354A;border:1px solid #2E5468;color:#A7F3D0;font-size:14px;line-height:1.5}
+.a-preview{flex:1 1 440px;min-width:0;position:sticky;top:92px;display:flex;flex-direction:column;gap:10px}
+.a-preview-bar{display:flex;justify-content:space-between;font-size:13px;color:#8FB7C4;padding:0 4px}
+.a-preview iframe{width:100%;height:min(76vh,760px);border:1px solid #1C4256;border-radius:20px;background:#081C28}
+@media (max-width: 900px){.a-preview{position:static}.a-preview iframe{height:620px}}

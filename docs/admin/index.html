@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin – Akire88</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body class="a-body">
+
+<!-- ============ LOGIN ============ -->
+<main id="login" class="a-login">
+  <form id="login-form" class="a-card a-login-card">
+    <div class="a-brand">
+      <svg width="40" height="40" viewBox="0 0 132 132" aria-hidden="true"><circle cx="40" cy="40" r="20" fill="none" stroke="#2DD4BF" stroke-width="11"></circle><circle cx="92" cy="40" r="20" fill="none" stroke="#A7F3D0" stroke-width="11"></circle><circle cx="40" cy="92" r="20" fill="none" stroke="#A7F3D0" stroke-width="11"></circle><circle cx="92" cy="92" r="20" fill="none" stroke="#2DD4BF" stroke-width="11"></circle><circle cx="66" cy="66" r="6" fill="#E6FFFA"></circle></svg>
+      <span>Akire<b>88</b></span>
+    </div>
+    <h1 class="a-h1">Area riservata</h1>
+    <div class="a-field"><label for="l-user">Utente</label><input id="l-user" class="k-field" autocomplete="username" required></div>
+    <div class="a-field"><label for="l-pass">Password</label><input id="l-pass" class="k-field" type="password" autocomplete="current-password" required></div>
+    <p class="k-err" role="alert" hidden></p>
+    <button type="submit" class="a-btn a-btn-primary">Accedi</button>
+  </form>
+</main>
+
+<!-- ============ APP ============ -->
+<div id="app" hidden>
+  <header class="a-top">
+    <div class="a-top-in">
+      <div class="a-brand">
+        <svg width="30" height="30" viewBox="0 0 132 132" aria-hidden="true"><circle cx="40" cy="40" r="20" fill="none" stroke="#2DD4BF" stroke-width="12"></circle><circle cx="92" cy="40" r="20" fill="none" stroke="#A7F3D0" stroke-width="12"></circle><circle cx="40" cy="92" r="20" fill="none" stroke="#A7F3D0" stroke-width="12"></circle><circle cx="92" cy="92" r="20" fill="none" stroke="#2DD4BF" stroke-width="12"></circle></svg>
+        <span>Akire<b>88</b> <em>Admin</em></span>
+      </div>
+      <nav class="a-tabs" role="tablist" aria-label="Sezioni">
+        <button role="tab" class="a-tab" data-tab="iscritti" aria-selected="true">Iscritti</button>
+        <button role="tab" class="a-tab" data-tab="scrivi" aria-selected="false">Scrivi newsletter</button>
+        <button role="tab" class="a-tab" data-tab="inviate" aria-selected="false">Inviate</button>
+      </nav>
+      <button id="logout" class="a-btn a-btn-ghost a-btn-sm">Esci</button>
+    </div>
+  </header>
+
+  <main class="a-main">
+    <!-- ---- Iscritti ---- -->
+    <section id="tab-iscritti" class="a-panel" role="tabpanel">
+      <div class="a-head">
+        <h1 class="a-h1">Iscritti alla newsletter</h1>
+        <div class="a-actions">
+          <button id="refresh" class="a-btn a-btn-ghost a-btn-sm">Aggiorna</button>
+          <button id="export" class="a-btn a-btn-ghost a-btn-sm">Esporta CSV</button>
+        </div>
+      </div>
+      <div class="a-stats">
+        <div class="a-stat"><span>Confermati</span><strong id="st-conf">–</strong></div>
+        <div class="a-stat"><span>In attesa di conferma</span><strong id="st-att">–</strong></div>
+        <div class="a-stat"><span>Disiscritti</span><strong id="st-dis">–</strong></div>
+      </div>
+      <div class="a-filters">
+        <div class="a-field a-grow"><label for="f-q">Cerca</label><input id="f-q" class="k-field" type="search" placeholder="nome@azienda.it"></div>
+        <div class="a-field"><label for="f-st">Stato</label>
+          <select id="f-st" class="k-field">
+            <option value="">Tutti</option><option value="confermato">Confermati</option>
+            <option value="in_attesa">In attesa</option><option value="disiscritto">Disiscritti</option>
+          </select>
+        </div>
+      </div>
+      <div class="a-tablewrap">
+        <table class="a-table">
+          <thead><tr><th scope="col">Email</th><th scope="col">Stato</th><th scope="col">Iscritto il</th><th scope="col">Confermato il</th><th scope="col"><span class="a-sr">Azioni</span></th></tr></thead>
+          <tbody id="subs"></tbody>
+        </table>
+        <p id="subs-empty" class="a-empty" hidden>Nessun iscritto trovato.</p>
+      </div>
+    </section>
+
+    <!-- ---- Scrivi ---- -->
+    <section id="tab-scrivi" class="a-panel" role="tabpanel" hidden>
+      <div class="a-head"><h1 class="a-h1">Scrivi una newsletter</h1><span class="a-note" id="draft-note"></span></div>
+      <div class="a-compose">
+        <form id="nl-form" class="a-card a-form" novalidate>
+          <div class="a-field"><label for="n-subject">Oggetto dell'email</label><input id="n-subject" class="k-field" maxlength="200" placeholder="Le novità di Akire88"></div>
+          <div class="a-field"><label for="n-title">Titolo nel corpo</label><input id="n-title" class="k-field" maxlength="200" placeholder="Ciao! Ecco cosa c'è di nuovo"></div>
+          <div class="a-field"><label for="n-body">Testo</label><textarea id="n-body" class="k-field" rows="10"></textarea>
+            <span class="a-hint">Riga vuota = nuovo paragrafo · <code>**testo**</code> = grassetto · i link https:// diventano cliccabili</span></div>
+          <fieldset class="a-fieldset">
+            <legend>Pulsante (facoltativo)</legend>
+            <div class="a-row">
+              <div class="a-field"><label for="n-btext">Testo del pulsante</label><input id="n-btext" class="k-field" maxlength="80" placeholder="Scopri di più"></div>
+              <div class="a-field a-grow"><label for="n-burl">Link</label><input id="n-burl" class="k-field" type="url" maxlength="600" placeholder="https://www.akire88.it"></div>
+            </div>
+          </fieldset>
+          <p class="k-err" id="nl-err" role="alert" hidden></p>
+          <p class="a-ok" id="nl-ok" role="status" hidden></p>
+
+          <div class="a-sendbox">
+            <div class="a-row a-end">
+              <div class="a-field a-grow"><label for="n-test">Invia una prova a</label><input id="n-test" class="k-field" type="email"></div>
+              <button type="button" id="btn-test" class="a-btn a-btn-ghost">Invia prova</button>
+            </div>
+            <button type="button" id="btn-send" class="a-btn a-btn-primary a-full">Invia a tutti gli iscritti confermati</button>
+            <div id="confirm" class="a-confirm" hidden>
+              <p id="confirm-text"></p>
+              <div class="a-row">
+                <button type="button" id="btn-cancel" class="a-btn a-btn-ghost">Annulla</button>
+                <button type="button" id="btn-go" class="a-btn a-btn-primary">Sì, invia ora</button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <div class="a-preview">
+          <div class="a-preview-bar"><span>Anteprima email</span><span id="prev-state" class="a-note"></span></div>
+          <iframe id="preview" title="Anteprima della newsletter" sandbox=""></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- Inviate ---- -->
+    <section id="tab-inviate" class="a-panel" role="tabpanel" hidden>
+      <div class="a-head"><h1 class="a-h1">Newsletter inviate</h1></div>
+      <div class="a-tablewrap">
+        <table class="a-table">
+          <thead><tr><th scope="col">Data</th><th scope="col">Oggetto</th><th scope="col">Inviate</th><th scope="col">Errori</th></tr></thead>
+          <tbody id="camps"></tbody>
+        </table>
+        <p id="camps-empty" class="a-empty" hidden>Nessuna newsletter inviata finora.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/admin/admin.js" defer></script>
+</body>
+</html>

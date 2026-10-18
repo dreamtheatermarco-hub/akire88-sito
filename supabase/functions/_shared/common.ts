@@ -41,15 +41,27 @@ export const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 
 // Invio email tramite la casella di Register (SMTP con SSL).
-export async function sendMail(opts: { to: string; subject: string; text: string; html: string; replyTo?: string }) {
+export function makeTransport(pool = false) {
   const port = Number(Deno.env.get("SMTP_PORT") ?? "465");
-  const transporter = nodemailer.createTransport({
+  return nodemailer.createTransport({
     host: Deno.env.get("SMTP_HOST"),
     port,
     secure: port === 465,
+    pool,
+    maxConnections: 1,
     auth: { user: Deno.env.get("SMTP_USER"), pass: Deno.env.get("SMTP_PASS") },
   });
-  await transporter.sendMail({
+}
+
+type MailOpts = {
+  to: string; subject: string; text: string; html: string;
+  replyTo?: string; headers?: Record<string, string>;
+};
+
+// deno-lint-ignore no-explicit-any
+export async function sendMail(opts: MailOpts, transporter?: any) {
+  const t = transporter ?? makeTransport();
+  await t.sendMail({
     from: `"Akire88" <${Deno.env.get("MAIL_FROM") ?? Deno.env.get("SMTP_USER")}>`,
     ...opts,
   });
@@ -59,14 +71,46 @@ export const SITE_URL = Deno.env.get("SITE_URL") ?? "https://www.akire88.it";
 export const NOTIFY_TO = Deno.env.get("NOTIFY_TO") ?? "assistenza@akire88.it";
 
 // Cornice grafica delle email
-export function mailLayout(title: string, bodyHtml: string): string {
-  return `<!doctype html><html lang="it"><body style="margin:0;background:#081C28;padding:32px 16px;font-family:Helvetica,Arial,sans-serif">
+export function mailLayout(title: string, bodyHtml: string, footerHtml = ""): string {
+  return `<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#081C28;padding:32px 16px;font-family:Helvetica,Arial,sans-serif">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#0E2A3B;border:1px solid #1C4256;border-radius:20px">
 <tr><td style="padding:32px 32px 8px;font-size:22px;font-weight:bold;color:#E6FFFA">Akire<span style="color:#2DD4BF">88</span></td></tr>
 <tr><td style="padding:8px 32px 0;font-size:20px;font-weight:bold;color:#E6FFFA">${title}</td></tr>
 <tr><td style="padding:16px 32px 32px;font-size:15px;line-height:1.6;color:#C2DCE4">${bodyHtml}</td></tr>
 </table>
-<p style="font-size:12px;color:#8FB7C4;margin:16px 0 0">© ${new Date().getFullYear()} Akire88 · <a href="${SITE_URL}/privacy.html" style="color:#8FB7C4">Privacy</a></p>
+<p style="font-size:12px;color:#8FB7C4;margin:16px 0 0">© ${new Date().getFullYear()} Akire88 · <a href="${SITE_URL}/privacy.html" style="color:#8FB7C4">Privacy</a></p>${footerHtml}
 </td></tr></table></body></html>`;
+}
+
+// Newsletter: testo semplice → paragrafi HTML, pulsante facoltativo, link di disiscrizione.
+export type NewsletterInput = {
+  subject: string; title: string; body: string; buttonText?: string; buttonUrl?: string;
+};
+
+export function isHttpUrl(u: unknown): u is string {
+  if (typeof u !== "string" || u.length > 600) return false;
+  try { const x = new URL(u); return x.protocol === "https:" || x.protocol === "http:"; } catch { return false; }
+}
+
+function inline(s: string): string {
+  // **grassetto** e link https://… cliccabili, dopo l'escape.
+  return esc(s)
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#E6FFFA">$1</strong>')
+    .replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g, '<a href="$1" style="color:#5EEAD4">$1</a>');
+}
+
+export function newsletterEmail(n: NewsletterInput, unsubscribeUrl: string) {
+  const paras = n.body.trim().split(/\n{2,}/).map((p) =>
+    `<p style="margin:0 0 16px">${inline(p).replace(/\n/g, "<br>")}</p>`
+  ).join("");
+  const button = n.buttonText && isHttpUrl(n.buttonUrl)
+    ? `<p style="margin:8px 0 8px"><a href="${esc(n.buttonUrl)}" style="display:inline-block;background:#2DD4BF;color:#081C28;text-decoration:none;font-weight:bold;padding:14px 24px;border-radius:24px">${esc(n.buttonText)}</a></p>`
+    : "";
+  const footer = `<p style="font-size:12px;color:#8FB7C4;margin:8px 0 0">Ricevi questa email perché ti sei iscritto alla newsletter di Akire88. <a href="${esc(unsubscribeUrl)}" style="color:#8FB7C4">Disiscriviti</a></p>`;
+  const html = mailLayout(esc(n.title), paras + button, footer);
+  const text = `${n.title}\n\n${n.body.trim()}\n${
+    n.buttonText && isHttpUrl(n.buttonUrl) ? `\n${n.buttonText}: ${n.buttonUrl}\n` : ""
+  }\n—\nAkire88 · ${SITE_URL}\nPer disiscriverti: ${unsubscribeUrl}`;
+  return { html, text };
 }

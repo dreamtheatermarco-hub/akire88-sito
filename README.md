@@ -10,6 +10,8 @@ supabase/
   migrations/         ← tabelle contact_requests e newsletter_subscribers
   functions/contact   ← salva la richiesta e avvisa assistenza@akire88.it
   functions/newsletter← iscrizione con doppia conferma, conferma, disiscrizione
+  functions/admin     ← pannello /admin: iscritti e invio newsletter
+  dashboard/          ← le stesse funzioni in un unico file per l'editor web
 ```
 
 Nessuna libreria esterna, nessun cookie, font ospitati nel sito.
@@ -73,13 +75,20 @@ Pannello Register → dominio `akire88.it` → **Gestione DNS**. Tocca solo ques
 
 Prima elimina gli eventuali record A/CNAME di `@` e `www` che puntano alla pagina di cortesia di Register. La propagazione richiede da pochi minuti a qualche ora; il certificato HTTPS arriva da solo poco dopo.
 
-## 4. Il tuo pannello admin
+## 4. Pannello admin (`/admin`)
 
-- Leggi le tabelle `contact_requests` e `newsletter_subscribers` **solo lato server** con la chiave `service_role` (o con un utente autenticato e policy dedicate).
-- Invia la newsletter solo agli iscritti con `stato = 'confermato'`.
-- In ogni email inserisci il link di disiscrizione:
-  `https://www.akire88.it/newsletter.html?azione=disiscrivi&token=<token dell'iscritto>`
-- `contact_requests.stato` può valere `nuova`, `in corso`, `chiusa`. La colonna `email_sent` indica se la notifica email è partita.
+Indirizzo: https://www.akire88.it/admin/ (escluso dai motori di ricerca, non collegato dal sito).
+
+1. **SQL Editor** → esegui `supabase/migrations/20261018010000_newsletter_campagne.sql` (storico degli invii).
+2. **Edge Functions** → nuova funzione chiamata `admin` con il codice di `supabase/dashboard/admin.ts`.
+3. **Edge Functions → Secrets** → aggiungi `ADMIN_USER` e `ADMIN_PASSWORD` (password lunga e unica). Facoltativo: `ADMIN_SESSION_HOURS` (default 8).
+
+Nel pannello:
+- **Iscritti**: contatori, ricerca, filtro per stato, esportazione CSV, rimozione.
+- **Scrivi newsletter**: oggetto, titolo, testo (riga vuota = paragrafo, `**grassetto**`, link automatici), pulsante facoltativo con link. Anteprima con la stessa grafica delle email, invio di prova, poi invio a tutti gli iscritti confermati con conferma.
+- **Inviate**: storico con destinatari ed eventuali errori.
+
+Ogni newsletter contiene il link personale di disiscrizione. Register applica limiti di invio orari alle caselle: con liste grandi (centinaia di iscritti) conviene un servizio di invio dedicato.
 
 ## 5. Prova finale
 
