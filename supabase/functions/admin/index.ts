@@ -2,39 +2,9 @@
 // Accesso con i segreti ADMIN_USER e ADMIN_PASSWORD; dopo il login il browser riceve un
 // token firmato valido 8 ore, così la password non viaggia a ogni richiesta.
 import {
-  clean, corsHeaders, db, isEmail, isHttpUrl, json, makeTransport, newsletterEmail, NOTIFY_TO,
-  type NewsletterInput, sendMail, SITE_URL,
+  clean, corsHeaders, db, isEmail, isHttpUrl, json, makeToken, makeTransport, newsletterEmail, NOTIFY_TO,
+  type NewsletterInput, safeEqual, sendMail, SESSION_HOURS, SITE_URL, validToken,
 } from "../_shared/common.ts";
-
-const SESSION_HOURS = Number(Deno.env.get("ADMIN_SESSION_HOURS") ?? "8");
-const enc = new TextEncoder();
-
-function safeEqual(a: string, b: string): boolean {
-  const x = enc.encode(a), y = enc.encode(b);
-  let diff = x.length ^ y.length;
-  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
-  return diff === 0;
-}
-
-async function hmac(data: string): Promise<string> {
-  const secret = `${Deno.env.get("ADMIN_PASSWORD")}:${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
-  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(data)));
-  return Array.from(sig, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function makeToken(): Promise<string> {
-  const exp = Date.now() + SESSION_HOURS * 3600_000;
-  return `${exp}.${await hmac(`admin:${exp}`)}`;
-}
-
-async function validToken(t: unknown): Promise<boolean> {
-  if (typeof t !== "string") return false;
-  const [expStr, sig] = t.split(".");
-  const exp = Number(expStr);
-  if (!exp || !sig || exp < Date.now()) return false;
-  return safeEqual(sig, await hmac(`admin:${exp}`));
-}
 
 function readNewsletter(b: Record<string, unknown>): NewsletterInput | string {
   const n: NewsletterInput = {

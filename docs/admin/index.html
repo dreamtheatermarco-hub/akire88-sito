@@ -35,7 +35,8 @@
         <span>Akire<b>88</b> <em>Admin</em></span>
       </div>
       <nav class="a-tabs" role="tablist" aria-label="Sezioni">
-        <button role="tab" class="a-tab" data-tab="iscritti" aria-selected="true">Iscritti</button>
+        <button role="tab" class="a-tab" data-tab="posta" aria-selected="true">Posta <span class="a-badge" id="badge-new" hidden></span></button>
+        <button role="tab" class="a-tab" data-tab="iscritti" aria-selected="false">Iscritti</button>
         <button role="tab" class="a-tab" data-tab="scrivi" aria-selected="false">Scrivi newsletter</button>
         <button role="tab" class="a-tab" data-tab="inviate" aria-selected="false">Inviate</button>
       </nav>
@@ -45,7 +46,66 @@
 
   <main class="a-main">
     <!-- ---- Iscritti ---- -->
-    <section id="tab-iscritti" class="a-panel" role="tabpanel">
+    <section id="tab-posta" class="a-panel" role="tabpanel">
+      <div class="a-head">
+        <h1 class="a-h1">Posta in arrivo</h1>
+        <div class="a-actions">
+          <div class="a-seg" role="group" aria-label="Filtra i messaggi">
+            <button type="button" class="a-segbtn" data-mf="nuove" aria-pressed="true">Nuove <span id="cnt-nuove"></span></button>
+            <button type="button" class="a-segbtn" data-mf="risposte" aria-pressed="false">Risposte <span id="cnt-risp"></span></button>
+            <button type="button" class="a-segbtn" data-mf="tutte" aria-pressed="false">Tutte</button>
+          </div>
+          <button id="m-refresh" class="a-btn a-btn-ghost a-btn-sm">Aggiorna</button>
+        </div>
+      </div>
+      <p class="k-err" id="m-err" role="alert" hidden></p>
+      <div class="a-mail">
+        <div class="a-card a-mlist">
+          <ul id="mlist" class="a-mitems"></ul>
+          <p id="m-empty" class="a-empty" hidden>Nessun messaggio qui.</p>
+          <p id="m-loading" class="a-empty">Carico la posta…</p>
+        </div>
+        <div class="a-card a-mview" id="mview">
+          <p id="mv-placeholder" class="a-empty">Seleziona un messaggio per leggerlo e rispondere.</p>
+          <div id="mv" hidden>
+            <div class="a-mhead">
+              <div class="a-mhead-txt">
+                <h2 id="mv-subject" class="a-h2"></h2>
+                <p class="a-mmeta"><strong id="mv-from"></strong> <span id="mv-addr"></span></p>
+                <p class="a-mmeta"><span id="mv-date"></span> · a <span id="mv-to"></span></p>
+              </div>
+              <button type="button" id="mv-unread" class="a-btn a-btn-ghost a-btn-sm">Segna come non letta</button>
+            </div>
+            <p id="mv-att" class="a-note" hidden></p>
+            <iframe id="mv-body" class="a-mbody" title="Contenuto del messaggio" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>
+
+            <form id="reply-form" class="a-reply" novalidate>
+              <h3 class="a-h3">Rispondi a <span id="rp-to"></span></h3>
+              <div class="a-field"><label for="rp-title">Titolo (facoltativo)</label><input id="rp-title" class="k-field" maxlength="200" placeholder="Grazie per averci scritto"></div>
+              <div class="a-field"><label for="rp-body">Testo</label><textarea id="rp-body" class="k-field" rows="8" placeholder="Ciao,&#10;&#10;..."></textarea>
+                <span class="a-hint">Riga vuota = nuovo paragrafo · <code>**testo**</code> = grassetto · i link https:// diventano cliccabili · la firma Akire88 si aggiunge da sola</span></div>
+              <fieldset class="a-fieldset">
+                <legend>Pulsante (facoltativo)</legend>
+                <div class="a-row">
+                  <div class="a-field"><label for="rp-btext">Testo del pulsante</label><input id="rp-btext" class="k-field" maxlength="80" placeholder="Prenota una call"></div>
+                  <div class="a-field a-grow"><label for="rp-burl">Link</label><input id="rp-burl" class="k-field" type="url" maxlength="600" placeholder="https://"></div>
+                </div>
+              </fieldset>
+              <label class="a-check"><input type="checkbox" id="rp-quote" checked> Includi il messaggio originale in fondo</label>
+              <p class="k-err" id="rp-err" role="alert" hidden></p>
+              <p class="a-ok" id="rp-ok" role="status" hidden></p>
+              <div class="a-row">
+                <button type="button" id="rp-prev" class="a-btn a-btn-ghost">Mostra anteprima</button>
+                <button type="submit" id="rp-send" class="a-btn a-btn-primary">Invia risposta</button>
+              </div>
+              <iframe id="rp-preview" class="a-mbody a-rprev" title="Anteprima della risposta" sandbox="" hidden></iframe>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-iscritti" class="a-panel" role="tabpanel" hidden>
       <div class="a-head">
         <h1 class="a-h1">Iscritti alla newsletter</h1>
         <div class="a-actions">

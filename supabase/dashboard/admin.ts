@@ -79,7 +79,7 @@ function mailLayout(title: string, bodyHtml: string, footerHtml = ""): string {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#0E2A3B;border:1px solid #1C4256;border-radius:20px">
 <tr><td style="padding:32px 32px 8px;font-size:22px;font-weight:bold;color:#E6FFFA">Akire<span style="color:#2DD4BF">88</span></td></tr>
-<tr><td style="padding:8px 32px 0;font-size:20px;font-weight:bold;color:#E6FFFA">${title}</td></tr>
+${title ? `<tr><td style="padding:8px 32px 0;font-size:20px;font-weight:bold;color:#E6FFFA">${title}</td></tr>` : ""}
 <tr><td style="padding:16px 32px 32px;font-size:15px;line-height:1.6;color:#C2DCE4">${bodyHtml}</td></tr>
 </table>
 <p style="font-size:12px;color:#8FB7C4;margin:16px 0 0">© ${new Date().getFullYear()} Akire88 · <a href="${SITE_URL}/privacy.html" style="color:#8FB7C4">Privacy</a></p>${footerHtml}
@@ -96,7 +96,7 @@ function isHttpUrl(u: unknown): u is string {
   try { const x = new URL(u); return x.protocol === "https:" || x.protocol === "http:"; } catch { return false; }
 }
 
-function inline(s: string): string {
+function inlineFormat(s: string): string {
   // **grassetto** e link https://… cliccabili, dopo l'escape.
   return esc(s)
     .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#E6FFFA">$1</strong>')
@@ -105,7 +105,7 @@ function inline(s: string): string {
 
 function newsletterEmail(n: NewsletterInput, unsubscribeUrl: string) {
   const paras = n.body.trim().split(/\n{2,}/).map((p) =>
-    `<p style="margin:0 0 16px">${inline(p).replace(/\n/g, "<br>")}</p>`
+    `<p style="margin:0 0 16px">${inlineFormat(p).replace(/\n/g, "<br>")}</p>`
   ).join("");
   const button = n.buttonText && isHttpUrl(n.buttonUrl)
     ? `<p style="margin:8px 0 8px"><a href="${esc(n.buttonUrl)}" style="display:inline-block;background:#2DD4BF;color:#081C28;text-decoration:none;font-weight:bold;padding:14px 24px;border-radius:24px">${esc(n.buttonText)}</a></p>`
@@ -118,7 +118,7 @@ function newsletterEmail(n: NewsletterInput, unsubscribeUrl: string) {
   return { html, text };
 }
 
-// ---------------------------------------------------------------
+// ---- Sessione del pannello admin (token firmato) ----
 const SESSION_HOURS = Number(Deno.env.get("ADMIN_SESSION_HOURS") ?? "8");
 const enc = new TextEncoder();
 
@@ -149,6 +149,30 @@ async function validToken(t: unknown): Promise<boolean> {
   return safeEqual(sig, await hmac(`admin:${exp}`));
 }
 
+// Risposta a un'email ricevuta: stessa grafica, testo, pulsante facoltativo e messaggio originale citato.
+type ReplyInput = { title?: string; body: string; buttonText?: string; buttonUrl?: string };
+
+function replyEmail(r: ReplyInput, quote?: { from: string; date: string; text: string }) {
+  const paras = r.body.trim().split(/\n{2,}/).map((p) =>
+    `<p style="margin:0 0 16px">${inlineFormat(p).replace(/\n/g, "<br>")}</p>`
+  ).join("");
+  const button = r.buttonText && isHttpUrl(r.buttonUrl)
+    ? `<p style="margin:8px 0 8px"><a href="${esc(r.buttonUrl)}" style="display:inline-block;background:#2DD4BF;color:#081C28;text-decoration:none;font-weight:bold;padding:14px 24px;border-radius:24px">${esc(r.buttonText)}</a></p>`
+    : "";
+  const sign = `<p style="margin:16px 0 0;color:#8FB7C4">Il team Akire88<br><a href="${SITE_URL}" style="color:#5EEAD4">${SITE_URL.replace(/^https?:\/\//, "")}</a></p>`;
+  const q = quote && quote.text.trim()
+    ? `<div style="margin:24px 0 0;padding:14px 16px;border-left:3px solid #2E5468;color:#8FB7C4;font-size:13px;line-height:1.55"><p style="margin:0 0 8px">Il ${esc(quote.date)}, ${esc(quote.from)} ha scritto:</p><p style="margin:0;white-space:pre-line">${esc(quote.text.trim().slice(0, 4000))}</p></div>`
+    : "";
+  const html = mailLayout(r.title ? esc(r.title) : "", paras + button + sign + q);
+  const text = `${r.title ? r.title + "\n\n" : ""}${r.body.trim()}\n${
+    r.buttonText && isHttpUrl(r.buttonUrl) ? `\n${r.buttonText}: ${r.buttonUrl}\n` : ""
+  }\nIl team Akire88\n${SITE_URL}${
+    quote ? `\n\nIl ${quote.date}, ${quote.from} ha scritto:\n` + quote.text.trim().slice(0, 4000).split("\n").map((l) => "> " + l).join("\n") : ""
+  }`;
+  return { html, text };
+}
+
+// ---------------------------------------------------------------
 function readNewsletter(b: Record<string, unknown>): NewsletterInput | string {
   const n: NewsletterInput = {
     subject: clean(b.subject, 200),

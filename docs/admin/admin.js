@@ -15,10 +15,10 @@
   function show(el, on) { el.hidden = !on; }
   function msg(el, text) { el.textContent = text; el.hidden = !text; }
 
-  function api(payload) {
+  function api(payload, fn) {
     if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) return Promise.reject(new Error('Configurazione Supabase mancante.'));
     if (token) payload.token = token;
-    return fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/functions/v1/admin', {
+    return fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/functions/v1/' + (fn || 'admin'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': CFG.supabaseAnonKey, 'Authorization': 'Bearer ' + CFG.supabaseAnonKey },
       body: JSON.stringify(payload)
@@ -51,6 +51,7 @@
     show($('login'), false); show($('app'), true);
     if (!$('n-test').value) $('n-test').value = notifyTo;
     refresh();
+    loadMail();
   }
   function logout() {
     token = null; store(KEY, null);
@@ -63,7 +64,7 @@
   document.querySelectorAll('.a-tab').forEach(function (t) {
     t.addEventListener('click', function () {
       document.querySelectorAll('.a-tab').forEach(function (x) { x.setAttribute('aria-selected', x === t ? 'true' : 'false'); });
-      ['iscritti', 'scrivi', 'inviate'].forEach(function (k) { show($('tab-' + k), k === t.dataset.tab); });
+      ['posta', 'iscritti', 'scrivi', 'inviate'].forEach(function (k) { show($('tab-' + k), k === t.dataset.tab); });
       if (t.dataset.tab === 'scrivi') schedulePreview(0);
     });
   });
@@ -206,6 +207,126 @@
       })
       .catch(function (x) { alertBar(x.message); })
       .then(function () { b.disabled = false; $('btn-cancel').disabled = false; b.textContent = 'Sì, invia ora'; });
+  });
+
+  /* ---------- Posta ---------- */
+  var mails = [], mfilter = 'nuove', cur = null;
+  function mapi(p) { return api(p, 'mail'); }
+  function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function shortDate(d) {
+    var x = new Date(d), now = new Date();
+    return x.toDateString() === now.toDateString()
+      ? x.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+      : x.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+  }
+
+  function loadMail() {
+    msg($('m-err'), ''); show($('m-loading'), !mails.length);
+    return mapi({ action: 'list' }).then(function (d) {
+      mails = d.messages || []; renderMail();
+    }).catch(function (x) { msg($('m-err'), x.message); })
+      .then(function () { show($('m-loading'), false); });
+  }
+
+  function renderMail() {
+    var nNew = mails.filter(function (m) { return !m.answered; }).length;
+    var nUnread = mails.filter(function (m) { return !m.seen; }).length;
+    $('cnt-nuove').textContent = nNew ? '(' + nNew + ')' : '';
+    $('cnt-risp').textContent = '';
+    var badge = $('badge-new'); badge.textContent = nUnread; show(badge, nUnread > 0);
+    var list = mails.filter(function (m) {
+      return mfilter === 'tutte' || (mfilter === 'nuove' ? !m.answered : m.answered);
+    });
+    var ul = $('mlist'); ul.textContent = '';
+    list.forEach(function (m) {
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'a-mitem' + (m.seen ? '' : ' unread');
+      if (cur && cur.uid === m.uid) b.setAttribute('aria-current', 'true');
+      b.innerHTML = '<span class="a-dot" aria-hidden="true"></span><span class="a-mfrom"></span><span class="a-mdate"></span><span class="a-msubj"></span>' + (m.answered ? '<span class="a-mtag">Risposta inviata</span>' : '');
+      b.querySelector('.a-mfrom').textContent = m.fromName || m.fromAddr;
+      b.querySelector('.a-mdate').textContent = shortDate(m.date);
+      b.querySelector('.a-msubj').textContent = m.subject;
+      b.setAttribute('aria-label', (m.seen ? '' : 'Non letta. ') + (m.fromName || m.fromAddr) + ': ' + m.subject);
+      b.addEventListener('click', function () { openMail(m.uid); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+    show($('m-empty'), !list.length);
+  }
+
+  document.querySelectorAll('.a-segbtn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      mfilter = b.dataset.mf;
+      document.querySelectorAll('.a-segbtn').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      renderMail();
+    });
+  });
+  $('m-refresh').addEventListener('click', loadMail);
+
+  function openMail(uid) {
+    msg($('m-err'), '');
+    show($('mv-placeholder'), false);
+    $('mv-subject').textContent = 'Apro il messaggio…';
+    show($('mv'), true);
+    mapi({ action: 'read', uid: uid }).then(function (d) {
+      cur = d.message;
+      $('mv-subject').textContent = cur.subject;
+      $('mv-from').textContent = cur.fromName || cur.fromAddr;
+      $('mv-addr').textContent = cur.fromName ? '<' + cur.fromAddr + '>' : '';
+      $('mv-date').textContent = cur.date;
+      $('mv-to').textContent = cur.to;
+      $('rp-to').textContent = cur.replyTo;
+      var att = cur.attachments || [];
+      msg($('mv-att'), att.length ? 'Allegati (da aprire nel programma di posta): ' + att.map(function (a) { return a.filename; }).join(', ') : '');
+      $('mv-body').srcdoc = cur.html || ('<!doctype html><meta charset="utf-8"><body style="margin:16px;font:15px/1.55 Helvetica,Arial,sans-serif;color:#14222b;white-space:pre-wrap;word-break:break-word">' + esc(cur.text || '(messaggio vuoto)') + '</body>');
+      ['rp-title', 'rp-body', 'rp-btext', 'rp-burl'].forEach(function (id) { $(id).value = ''; });
+      msg($('rp-err'), ''); msg($('rp-ok'), ''); show($('rp-preview'), false); $('rp-prev').textContent = 'Mostra anteprima';
+      mails.forEach(function (m) { if (m.uid === uid) m.seen = true; });
+      renderMail();
+      if (window.innerWidth < 900) $('mview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }).catch(function (x) { show($('mv'), false); show($('mv-placeholder'), true); msg($('m-err'), x.message); });
+  }
+
+  $('mv-unread').addEventListener('click', function () {
+    if (!cur) return;
+    var uid = cur.uid;
+    mapi({ action: 'unread', uid: uid }).then(function () {
+      mails.forEach(function (m) { if (m.uid === uid) m.seen = false; });
+      renderMail();
+    }).catch(function (x) { msg($('m-err'), x.message); });
+  });
+
+  function replyData() {
+    return { uid: cur && cur.uid, title: $('rp-title').value.trim(), body: $('rp-body').value,
+      buttonText: $('rp-btext').value.trim(), buttonUrl: $('rp-burl').value.trim(), quote: $('rp-quote').checked };
+  }
+  function replyPreview() {
+    var d = replyData();
+    if (!d.body.trim()) { msg($('rp-err'), 'Scrivi il testo per vedere l\'anteprima.'); return; }
+    mapi(Object.assign({ action: 'preview', quoteFrom: cur.fromName || cur.fromAddr, quoteDate: cur.date, quoteText: cur.text }, d))
+      .then(function (r) { msg($('rp-err'), ''); $('rp-preview').srcdoc = r.html; show($('rp-preview'), true); $('rp-prev').textContent = 'Aggiorna anteprima'; })
+      .catch(function (x) { msg($('rp-err'), x.message); });
+  }
+  $('rp-prev').addEventListener('click', replyPreview);
+  ['rp-title', 'rp-body', 'rp-btext', 'rp-burl', 'rp-quote'].forEach(function (id) {
+    $(id).addEventListener('input', function () { if (!$('rp-preview').hidden) schedule(); });
+  });
+  var rpt = null; function schedule() { clearTimeout(rpt); rpt = setTimeout(replyPreview, 700); }
+
+  $('reply-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!cur) return;
+    var d = replyData();
+    if (!d.body.trim()) { msg($('rp-err'), 'Scrivi il testo della risposta.'); return; }
+    var b = $('rp-send'); b.disabled = true; b.textContent = 'Invio…'; msg($('rp-err'), ''); msg($('rp-ok'), '');
+    mapi(Object.assign({ action: 'reply' }, d)).then(function (r) {
+      msg($('rp-ok'), 'Risposta inviata a ' + r.to + ' («' + r.subject + '»).');
+      ['rp-title', 'rp-body', 'rp-btext', 'rp-burl'].forEach(function (id) { $(id).value = ''; });
+      show($('rp-preview'), false);
+      mails.forEach(function (m) { if (m.uid === cur.uid) { m.answered = true; m.seen = true; } });
+      renderMail();
+    }).catch(function (x) { msg($('rp-err'), x.message); })
+      .then(function () { b.disabled = false; b.textContent = 'Invia risposta'; });
   });
 
   /* ---------- Avvio ---------- */

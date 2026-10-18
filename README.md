@@ -11,6 +11,7 @@ supabase/
   functions/contact   ← salva la richiesta e avvisa assistenza@akire88.it
   functions/newsletter← iscrizione con doppia conferma, conferma, disiscrizione
   functions/admin     ← pannello /admin: iscritti e invio newsletter
+  functions/mail      ← pannello /admin: posta in arrivo e risposte (IMAP)
   dashboard/          ← le stesse funzioni in un unico file per l'editor web
 ```
 
@@ -89,6 +90,18 @@ Nel pannello:
 - **Inviate**: storico con destinatari ed eventuali errori.
 
 Ogni newsletter contiene il link personale di disiscrizione. Register applica limiti di invio orari alle caselle: con liste grandi (centinaia di iscritti) conviene un servizio di invio dedicato.
+
+### Posta (tab "Posta" del pannello)
+
+Legge la casella assistenza@akire88.it via IMAP e permette di rispondere con la grafica Akire88.
+
+1. **Edge Functions** → nuova funzione `mail` con il codice di `supabase/dashboard/mail.ts`.
+2. Segreti (facoltativi, hanno già un valore predefinito): `IMAP_HOST` (predefinito `pop.securemail.pro`), `IMAP_PORT` (993). Utente e password sono quelli SMTP; se diversi, `IMAP_USER` e `IMAP_PASS`.
+
+- **Nuove**: messaggi senza risposta (il pallino indica i non letti) · **Risposte**: già risposti · **Tutte**: gli ultimi 80.
+- Aprire un messaggio lo segna come letto; "Segna come non letta" lo riporta indietro.
+- La risposta parte da assistenza@akire88.it con titolo facoltativo, testo, pulsante con link, firma e messaggio originale citato. Il messaggio viene segnato come "risposto" (visibile anche in Outlook, Apple Mail ecc.) e una copia va nella cartella Inviata.
+- Gli allegati ricevuti sono elencati ma si aprono dal programma di posta.
 
 ## 5. Prova finale
 
